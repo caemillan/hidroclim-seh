@@ -1,0 +1,26 @@
+[
+  {
+    "id": "pisco",
+    "categoria": "bases",
+    "nombre": "PISCO",
+    "tipo": "Datos",
+    "variables": ["Precipitación", "Temperatura"],
+    "resolucion": ["Diaria", "Horaria"],
+    "dominio": ["Perú"],
+    "institucion": "SENAMHI",
+    "descripcion": "Producto grillado para análisis climático e hidrológico.",
+    "url": "https://example.com/pisco"
+  },
+  {
+    "id": "silvia-chirilu",
+    "categoria": "plataformas",
+    "nombre": "EWS Rímac (flood)",
+    "tipo": "Monitoreo",
+    "variables": ["Precipitación", "Inundación", "Caudal", "Nivel de agua","Debris flow"],
+    "resolucion": ["Horaria"],
+    "dominio": ["Rímac", "Lima","Chosica", "Chaclacayo"],
+    "institucion": "SENAMHI",
+    "descripcion": "Pronóstico operativo e impactos por activación de quebradas e inundaciones.",
+    "url": "https://example.com/ews-rimac"
+  }
+]
