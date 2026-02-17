@@ -19,8 +19,9 @@ export default function Filtros({
 }) {
   return (
     <Box sx={{ width: 280, p: 2 }}>
+      
       <Typography variant="h6" sx={{ mb: 2 }}>
-        Filtros
+        Filtros de la plataforma
       </Typography>
 
       <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>

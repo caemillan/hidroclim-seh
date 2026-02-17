@@ -1,22 +1,25 @@
+
+import ViewModuleIcon from "@mui/icons-material/ViewModule";
+import ViewListIcon from "@mui/icons-material/ViewList";
+import TableRowsIcon from "@mui/icons-material/TableRows";
+
 import { useEffect, useMemo, useState } from "react";
+
 import {
-  Box,
+  Box, Button, ToggleButton, ToggleButtonGroup,
+  FormControl, InputLabel, Select, MenuItem,
+  Table, TableBody, TableCell, TableHead, TableRow, Paper,
   Chip,
-  Container,
-  FormControl,
+  Container, 
   Grid,
-  InputLabel,
-  MenuItem,
-  Select,
   TextField,
   Typography,
   Card,
   CardContent,
   CardActions,
-  Button,
   Drawer,
   IconButton,
-  useMediaQuery,
+  useMediaQuery
 } from "@mui/material";
 
 import FilterListIcon from "@mui/icons-material/FilterList";
@@ -28,10 +31,21 @@ import { loadCatalogo } from "../lib/catalogo";
 import Filtros from "../components/Filtros";
 
 function uniq(arr) {
-  return Array.from(new Set(arr)).sort((a, b) => a.localeCompare(b));
+  return Array.from(
+    new Set(
+      (arr || [])
+        .filter((v) => v != null)   // quita null/undefined
+        .map((v) => String(v))      // convierte todo a string
+    )
+  ).sort((a, b) => a.localeCompare(b, "es", { sensitivity: "base" }));
 }
 
+
 export default function CatalogoPage({ defaultTab = "plataformas" }) {
+  const [view, setView] = useState("cards"); // cards | list | table
+  const [sortBy, setSortBy] = useState("nombre"); // nombre | institucion | tipo
+  // const [sortDir, setSortDir] = useState("asc"); // asc | desc
+
   const [items, setItems] = useState([]);
   const [searchParams, setSearchParams] = useSearchParams();
   const nav = useNavigate();
@@ -90,6 +104,24 @@ export default function CatalogoPage({ defaultTab = "plataformas" }) {
     });
   }, [itemsTab, q, tipo, variable, resolucion, dominio]);
 
+  //Ordenamiento (usa esto después de filtrados) ==========================================================================
+  const sorted = useMemo(() => {
+  const getKey = (x) => {
+    if (sortBy === "nombre") return x.nombre ?? "";
+    if (sortBy === "institucion") return x.institucion ?? "";
+    if (sortBy === "tipo") return x.tipo ?? "";
+    return "";
+  };
+
+  return [...filtrados].sort((a, b) => {
+    const aa = String(getKey(a));
+    const bb = String(getKey(b));
+    return aa.localeCompare(bb, "es", { sensitivity: "base" });
+  });
+}, [filtrados, sortBy]);
+
+
+
   const syncUrl = (next) => {
     const sp = Object.fromEntries(searchParams.entries());
     const merged = { ...sp, ...next };
@@ -109,9 +141,10 @@ export default function CatalogoPage({ defaultTab = "plataformas" }) {
   };
 
   return (
-    <Container maxWidth="lg" className="py-6">
+    <Container maxWidth="xl" className="py-6" sx={{ px: { xs: 2, md: 3 } }}>
+
       {/* Header + resumen */}
-      <Box className="mb-4">
+      {/* <Box className="mb-4">
         <Typography variant="h5" className="font-semibold mb-2">
           Explorar
         </Typography>
@@ -128,33 +161,74 @@ export default function CatalogoPage({ defaultTab = "plataformas" }) {
               </Button>
             )}
             <Button variant="outlined" onClick={clear}>
-              Limpiar filtros
+              Limpiar filtros2
             </Button>
           </Box>
         </Box>
-      </Box>
+      </Box> */}
+      
       {/* Botón flotante para mostrar filtros */}
-{!open && (
-  <Box
-    sx={{
-      position: "fixed",
-      top: 120,        // debajo del AppBar
-      left: 8,
-      zIndex: 1201,    // encima del contenido
-    }}
-  >
-    <IconButton
-      onClick={() => setOpen(true)}
-      sx={{
-        bgcolor: "#0B6FA4",
-        color: "white",
-        "&:hover": { bgcolor: "#095c88" },
-      }}
-    >
-      <FilterListIcon />
-    </IconButton>
-  </Box>
-)}
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 , justifyContent: "flex-end" }}>
+        {/* Vista: cards/list/table */}
+        <ToggleButtonGroup
+          size="small"
+          value={view}
+          exclusive
+          onChange={(_, v) => v && setView(v)}
+        >
+          <ToggleButton value="cards" aria-label="Tarjetas">
+            <ViewModuleIcon fontSize="small" />
+          </ToggleButton>
+          <ToggleButton value="list" aria-label="Lista">
+            <ViewListIcon fontSize="small" />
+          </ToggleButton>
+          <ToggleButton value="table" aria-label="Tabla">
+            <TableRowsIcon fontSize="small" />
+          </ToggleButton>
+        </ToggleButtonGroup>
+
+        {/* Ordenar por */}
+        <FormControl size="small" sx={{ minWidth: 180 }}>
+          <InputLabel>Ordenar por</InputLabel>
+          <Select
+            value={sortBy}
+            label="Ordenar por"
+            onChange={(e) => setSortBy(e.target.value)}
+          >
+            <MenuItem value="nombre">Nombre</MenuItem>
+            <MenuItem value="institucion">Institución</MenuItem>
+            <MenuItem value="tipo">Tipo</MenuItem>
+          </Select>
+        </FormControl>
+
+        {/* Contador (opcional) */}
+        {/* <Typography variant="body2" sx={{ color: "text.secondary", ml: 1 }}>
+          Mostrando <b>{sorted.length}</b> de <b>{itemsTab.length}</b>
+        </Typography> */}
+      </Box>
+
+
+      {!open && (
+        <Box
+          sx={{
+            position: "fixed",
+            top: 120,        // debajo del AppBar
+            left: 8,
+            zIndex: 1201,    // encima del contenido
+          }}
+        >
+          <IconButton
+            onClick={() => setOpen(true)}
+            sx={{
+              bgcolor: "#0B6FA4",
+              color: "white",
+              "&:hover": { bgcolor: "#095c88" },
+            }}
+          >
+            <FilterListIcon />
+          </IconButton>
+        </Box>
+      )}
 
 
       {/* Drawer de filtros */}
@@ -172,7 +246,15 @@ export default function CatalogoPage({ defaultTab = "plataformas" }) {
       >
         {/* Botón cerrar dentro del panel (tipo DataClima) */}
         <Box sx={{ display: "flex", justifyContent: "flex-end", p: 1 }}>
-          <IconButton onClick={() => setOpen(false)}>
+          <IconButton 
+          
+          onClick={() => setOpen(false)}
+          sx={{
+          // bgcolor: "#fffb00ff",
+          // color: "white",
+          // "&:hover": { bgcolor: "#8da40bff" },
+      }}
+          >
             <FilterListIcon />
           </IconButton>
         </Box>
@@ -221,64 +303,197 @@ export default function CatalogoPage({ defaultTab = "plataformas" }) {
           </Box>
         )}
 
-        <Grid container spacing={2}>
-          {filtrados.map((x) => (
-            <Grid item xs={12} sm={6} md={4} key={x.id}>
-              <Card className="h-full rounded-2xl shadow-sm">
-                <CardContent>
-                  <Typography variant="h6" className="font-semibold">
-                    {x.nombre}
-                  </Typography>
+        {/* ======= VISTA: CARDS ======= */}
+{view === "cards" && (
+  <Box
+    sx={{
+      display: "grid",
+      gap: 2,
+      gridTemplateColumns: {
+        xs: "1fr",
+        sm: "repeat(2, minmax(0, 1fr))",
+        md: "repeat(3, minmax(0, 1fr))",
+      },
+      alignItems: "stretch",
+    }}
+  >
+    {sorted.map((x) => (
+      <Card
+        key={x.id}
+        sx={{
+          width: "100%",
+          minWidth: 0, // ✅ clave
+          display: "flex",
+          flexDirection: "column",
+          borderRadius: 2,
+        }}
+        className="shadow-sm"
+      >
+        {x.imagen && (
+          <Box
+            component="img"
+            src={`${import.meta.env.BASE_URL}${x.imagen.replace(/^\//, "")}`}
+            alt={x.nombre}
+            sx={{
+              width: "100%",
+              height: 160,
+              objectFit: "cover",
+              borderTopLeftRadius: 8,
+              borderTopRightRadius: 8,
+            }}
+          />
+        )}
 
-                  <Typography variant="body2" className="text-gray-600 mt-1">
-                    {x.descripcion}
-                  </Typography>
+        <CardContent sx={{ flexGrow: 1, minWidth: 0 }}>
+          <Typography
+            variant="h6"
+            sx={{
+              fontWeight: 600,
+              overflowWrap: "anywhere",
+              wordBreak: "break-word",
+              minWidth: 0,
+            }}
+          >
+            {x.nombre}
+          </Typography>
 
-                  <Box className="mt-3 flex flex-wrap gap-1">
-                    {x.tipo && <Chip size="small" label={x.tipo} />}
-                    {(x.variables || []).slice(0, 3).map((v) => (
-                      <Chip key={v} size="small" label={v} variant="outlined" />
-                    ))}
+          <Typography
+            variant="body2"
+            sx={{
+              color: "text.secondary",
+              mt: 1,
+              overflowWrap: "anywhere", // ✅ evita que el texto cambie el ancho
+              wordBreak: "break-word",
+              display: "-webkit-box",   // ✅ 3 líneas y corta
+              WebkitLineClamp: 3,
+              WebkitBoxOrient: "vertical",
+              overflow: "hidden",
+              minWidth: 0,
+            }}
+          >
+            {x.descripcion}
+          </Typography>
+
+          <Box sx={{ mt: 2, display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+            {x.tipo && <Chip size="small" label={x.tipo} />}
+            {(x.variables || []).slice(0, 3).map((v) => (
+              <Chip key={v} size="small" label={v} variant="outlined" />
+            ))}
+          </Box>
+
+          <Box sx={{ mt: 1.5, fontSize: 14, color: "text.secondary" }}>
+            <div><b>Institución:</b> {x.institucion || "—"}</div>
+            <div><b>Resolución:</b> {(x.resolucion || []).join(", ") || "—"}</div>
+            <div><b>Dominio:</b> {(x.dominio || []).join(", ") || "—"}</div>
+          </Box>
+        </CardContent>
+
+        <CardActions sx={{ px: 2, pb: 2, gap: 1 }}>
+          <Button
+            variant="outlined"
+            fullWidth
+            startIcon={<InfoOutlinedIcon />}
+            onClick={() => nav(`/plataforma/${x.id}`)}
+          >
+            Ver detalle
+          </Button>
+
+          <Button
+            fullWidth
+            variant="contained"
+            endIcon={<OpenInNewIcon />}
+            onClick={() => window.open(x.url, "_blank", "noopener,noreferrer")}
+            disabled={!x.url}
+          >
+            Ir
+          </Button>
+        </CardActions>
+      </Card>
+    ))}
+  </Box>
+)}
+
+
+        {/* ======= VISTA: LISTA ======= */}
+        {view === "list" && (
+          <Box className="space-y-2">
+            {sorted.map((x) => (
+              <Paper key={x.id} className="p-3 rounded-2xl">
+                <Box className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                  <Box sx={{ minWidth: 0 }}>
+                    <Typography variant="subtitle1" className="font-semibold" noWrap>
+                      {x.nombre}
+                    </Typography>
+                    <Typography variant="body2" className="text-gray-600">
+                      {x.descripcion}
+                    </Typography>
+
+                    <Typography variant="caption" className="text-gray-600 block mt-1">
+                      {(x.institucion || "—")} • {(x.resolucion || []).join(", ") || "—"} • {(x.dominio || []).join(", ") || "—"}
+                    </Typography>
                   </Box>
 
-                  <Box className="mt-2 text-sm text-gray-600">
-                    <div>
-                      <b>Institución:</b> {x.institucion || "—"}
-                    </div>
-                    <div>
-                      <b>Resolución:</b> {(x.resolucion || []).join(", ") || "—"}
-                    </div>
-                    <div>
-                      <b>Dominio:</b> {(x.dominio || []).join(", ") || "—"}
-                    </div>
+                  <Box className="flex gap-2">
+                    <Button variant="outlined" onClick={() => nav(`/plataforma/${x.id}`)}>
+                      Ver detalle
+                    </Button>
+                    <Button
+                      variant="contained"
+                      onClick={() => window.open(x.url, "_blank", "noopener,noreferrer")}
+                      disabled={!x.url}
+                    >
+                      Ir
+                    </Button>
                   </Box>
-                </CardContent>
+                </Box>
+              </Paper>
+            ))}
+          </Box>
+        )}
 
-                <CardActions className="px-4 pb-4 flex gap-2">
-                  <Button
-                    variant="outlined"
-                    fullWidth
-                    startIcon={<InfoOutlinedIcon />}
-                    onClick={() => nav(`/plataforma/${x.id}`)}
-                  >
-                    Ver detalle
-                  </Button>
+        {/* ======= VISTA: TABLA ======= */}
+        {view === "table" && (
+          <Paper className="rounded-2xl overflow-hidden">
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell><b>Nombre</b></TableCell>
+                  <TableCell><b>Tipo</b></TableCell>
+                  <TableCell><b>Institución</b></TableCell>
+                  <TableCell><b>Resolución</b></TableCell>
+                  <TableCell><b>Dominio</b></TableCell>
+                  <TableCell align="right"><b>Acciones</b></TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {sorted.map((x) => (
+                  <TableRow key={x.id} hover>
+                    <TableCell>{x.nombre}</TableCell>
+                    <TableCell>{x.tipo || "—"}</TableCell>
+                    <TableCell>{x.institucion || "—"}</TableCell>
+                    <TableCell>{(x.resolucion || []).join(", ") || "—"}</TableCell>
+                    <TableCell>{(x.dominio || []).join(", ") || "—"}</TableCell>
+                    <TableCell align="right">
+                      <Button size="small" variant="outlined" onClick={() => nav(`/plataforma/${x.id}`)}>
+                        Detalle
+                      </Button>
+                      <Button
+                        size="small"
+                        sx={{ ml: 1 }}
+                        variant="contained"
+                        onClick={() => window.open(x.url, "_blank", "noopener,noreferrer")}
+                        disabled={!x.url}
+                      >
+                        Ir
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Paper>
+        )}
 
-                  <Button
-                    fullWidth
-                    variant="contained"
-                    className="bg-senamhi-primary hover:bg-senamhi-dark"
-                    endIcon={<OpenInNewIcon />}
-                    onClick={() => window.open(x.url, "_blank", "noopener,noreferrer")}
-                    disabled={!x.url}
-                  >
-                    Ir
-                  </Button>
-                </CardActions>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
       </Box>
     </Container>
   );

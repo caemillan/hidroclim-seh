@@ -13,7 +13,7 @@ export default function Layout() {
   return (
     <>
       <AppBar position="sticky" elevation={0} sx={{ bgcolor: "#0B6FA4" }}>
-        <Toolbar sx={{ display: "flex", justifyContent: "space-between", gap: 2 }}>
+        <Toolbar sx={{ display: "flex", justifyContent: "space-between" , flexWrap: "wrap" }}> 
           <Typography
             variant="h6"
             sx={{
@@ -36,7 +36,7 @@ export default function Layout() {
           </Typography>
 
 
-          <Box sx={{ minWidth: 520 }}>
+          <Box sx={{ flex: 1, display: "flex", justifyContent: "flex-end", minWidth: 0 }}>
             <Tabs
               value={current}
               onChange={handleChange}
@@ -56,6 +56,7 @@ export default function Layout() {
               <Tab label="Acerca de" value="/acerca" />
             </Tabs>
           </Box>
+
         </Toolbar>
       </AppBar>
 
